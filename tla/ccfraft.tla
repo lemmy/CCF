@@ -57,10 +57,6 @@ CONSTANTS
     TypeSignature,
     TypeReconfiguration
 
-\* CCF: Limit how many identical append entries messages each node can send to another
-CONSTANTS MessagesLimit
-ASSUME MessagesLimit \in Nat
-
 \* CCF: Limit the number of commit notifications per commit Index and server
 CONSTANTS CommitNotificationLimit
 ASSUME CommitNotificationLimit \in Nat
@@ -388,9 +384,6 @@ AppendEntries(i, j) ==
                    mdest          |-> j]
            index == nextIndex[i][j]
        IN
-       /\ IF Len(messagesSent[i][j]) >= index
-          THEN messagesSent[i][j][index] < MessagesLimit
-          ELSE TRUE
        /\ messagesSent' =
             IF Len(messagesSent[i][j]) < index
             THEN [messagesSent EXCEPT ![i][j] = Append(messagesSent[i][j], 1) ]
@@ -997,7 +990,7 @@ MessageVarsTypeInv ==
         /\ Len(messagesSent[i][j]) \in Nat
         /\ IF Len(messagesSent[i][j]) > 0 THEN
             \A k \in 1..Len(messagesSent[i][j]) :
-                messagesSent[i][j][k] \in 1..MessagesLimit
+                messagesSent[i][j][k] \in Nat \ {0}
             ELSE TRUE
     /\ \A i \in Servers :
         /\ commitsNotified[i][1] \in Nat

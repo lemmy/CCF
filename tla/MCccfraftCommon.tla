@@ -29,6 +29,10 @@ ASSUME RequestLimit \in Nat
 CONSTANTS MaxSimultaneousCandidates
 ASSUME MaxSimultaneousCandidates \in Nat
 
+\* CCF: Limit how many identical append entries messages each node can send to another
+CONSTANTS MessagesLimit
+ASSUME MessagesLimit \in Nat
+
 ----
 
 BoundStateSpace ==
@@ -43,6 +47,7 @@ BoundStateSpace ==
         /\ \A j \in Servers :
             \* State limitation: Limit requested votes
             /\ votesRequested[i][j] <= RequestVoteLimit
+            /\ Len(messagesSent[i][j]) >= nextIndex[i][j] => messagesSent[i][j][nextIndex[i][j]] <= MessagesLimit
 
 ----
 
