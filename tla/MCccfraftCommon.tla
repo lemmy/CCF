@@ -17,6 +17,18 @@ ASSUME TermLimit \in Nat \ {0}
 CONSTANTS RequestLimit
 ASSUME RequestLimit \in Nat
 
+\* Limit max number of simultaneous candidates
+\* We made several restrictions to the state space of Raft. However since we
+\* made these restrictions, Deadlocks can occur at places that Raft would in
+\* real-world deployments handle graciously.
+\* One example of this is if a Quorum of nodes becomes Candidate but can not
+\* timeout anymore since we constrained the terms. Then, an artificial Deadlock
+\* is reached. We solve this below. If TermLimit is set to any number >2, this is
+\* not an issue since breadth-first search will make sure that a similar
+\* situation is simulated at term==1 which results in a term increase to 2.
+CONSTANTS MaxSimultaneousCandidates
+ASSUME MaxSimultaneousCandidates \in Nat
+
 ----
 
 BoundStateSpace ==
@@ -25,6 +37,9 @@ BoundStateSpace ==
     /\ \A i \in Servers :
         \* Limit the term of each server to reduce state space
         /\ currentTerm[i] <= TermLimit
+        \* Limit number of candidates in our relevant server set
+        \* (i.e., simulate that not more than a given limit of servers in each configuration times out)
+        /\ Cardinality({ s \in GetServerSetForIndex(i, commitIndex[i]) : state[s] = Candidate}) <= MaxSimultaneousCandidates
         /\ \A j \in Servers :
             \* State limitation: Limit requested votes
             /\ votesRequested[i][j] <= RequestVoteLimit
