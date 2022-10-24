@@ -7,13 +7,20 @@ EXTENDS ccfraft
 CONSTANTS RequestVoteLimit
 ASSUME RequestVoteLimit \in Nat
 
+\* Limit on terms
+\* By default, all servers start as followers in term one
+\* So this should therefore be at least two
+CONSTANTS TermLimit
+ASSUME TermLimit \in Nat \ {0}
+
 ----
 
 BoundStateSpace ==
     \A i \in Servers :
+        \* Limit the term of each server to reduce state space
+        /\ currentTerm[i] <= TermLimit
         /\ \A j \in Servers :
             \* State limitation: Limit requested votes
             /\ votesRequested[i][j] <= RequestVoteLimit
     
-
 ==================================
