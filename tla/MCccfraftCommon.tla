@@ -33,6 +33,10 @@ ASSUME MaxSimultaneousCandidates \in Nat
 CONSTANTS MessagesLimit
 ASSUME MessagesLimit \in Nat
 
+\* CCF: Limit the number of commit notifications per commit Index and server
+CONSTANTS CommitNotificationLimit
+ASSUME CommitNotificationLimit \in Nat
+
 ----
 
 BoundStateSpace ==
@@ -44,6 +48,7 @@ BoundStateSpace ==
         \* Limit number of candidates in our relevant server set
         \* (i.e., simulate that not more than a given limit of servers in each configuration times out)
         /\ Cardinality({ s \in GetServerSetForIndex(i, commitIndex[i]) : state[s] = Candidate}) <= MaxSimultaneousCandidates
+        /\ commitsNotified[i][2] <= CommitNotificationLimit
         /\ \A j \in Servers :
             \* State limitation: Limit requested votes
             /\ votesRequested[i][j] <= RequestVoteLimit

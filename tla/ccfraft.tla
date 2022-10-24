@@ -57,10 +57,6 @@ CONSTANTS
     TypeSignature,
     TypeReconfiguration
 
-\* CCF: Limit the number of commit notifications per commit Index and server
-CONSTANTS CommitNotificationLimit
-ASSUME CommitNotificationLimit \in Nat
-
 CONSTANTS
     NodeOne,
     NodeTwo,
@@ -551,8 +547,7 @@ NotifyCommit(i,j) ==
     /\ state[i] = RetiredLeader
     \* Only send notifications of commit to servers in the server set
     /\ IsInServerSetForIndex(j, i, commitIndex[i])
-    /\ \/ commitsNotified[i][1] < commitIndex[i]
-       \/ commitsNotified[i][2] < CommitNotificationLimit
+    /\ commitsNotified[i][1] < commitIndex[i]
     /\ LET new_notified == IF commitsNotified[i][1] = commitIndex[i]
                            THEN <<commitsNotified[i][1], commitsNotified[i][2] + 1>>
                            ELSE <<commitIndex[i], 1>>
@@ -994,7 +989,7 @@ MessageVarsTypeInv ==
             ELSE TRUE
     /\ \A i \in Servers :
         /\ commitsNotified[i][1] \in Nat
-        /\ commitsNotified[i][2] \in 0..CommitNotificationLimit
+        /\ commitsNotified[i][2] \in Nat
 
 ServerVarsTypeInv ==
     /\ \A i \in Servers :
