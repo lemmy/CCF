@@ -1,5 +1,5 @@
 ---------- MODULE MCccfraftWithReconfig ----------
-EXTENDS ccfraft, TLC
+EXTENDS MCccfraftCommon, TLC
 
 Servers_mc == {NodeOne, NodeTwo}
 Configurations_mc == <<{NodeOne}, {NodeOne, NodeTwo}, {NodeTwo}>>

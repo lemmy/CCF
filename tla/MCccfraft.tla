@@ -1,5 +1,5 @@
 ---------- MODULE MCccfraft ----------
-EXTENDS ccfraft, TLC
+EXTENDS MCccfraftCommon, TLC
 
 Servers_mc == {NodeOne, NodeTwo, NodeThree}
 Configurations_mc == <<{NodeOne, NodeTwo, NodeThree}>>
