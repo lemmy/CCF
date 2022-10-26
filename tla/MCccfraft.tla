@@ -2,7 +2,7 @@
 EXTENDS MCccfraftCommon, TLC
 
 Servers_mc == {NodeOne, NodeTwo, NodeThree}
-Configurations_mc == <<{NodeOne, NodeTwo, NodeThree}>>
+Configurations_mc == {{NodeOne, NodeTwo, NodeThree}}
 
 \*  SNIPPET_START: mc_config
 \* Limit the terms that can be reached. Needs to be set to at least 3 to
@@ -24,6 +24,8 @@ CommitNotificationLimit_mc == 0
 
 \* Limit max number of simultaneous candidates
 MaxSimultaneousCandidates_mc == 1
+
+ReconfigurationCountLimit_mc == 0
 \* SNIPPET_END: mc_config
 
 mc_spec == Spec

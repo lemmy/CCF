@@ -2,7 +2,8 @@
 EXTENDS MCccfraftCommon, TLC
 
 Servers_mc == {NodeOne, NodeTwo}
-Configurations_mc == <<{NodeOne}, {NodeOne, NodeTwo}, {NodeTwo}>>
+Configurations_mc == {{NodeOne}, {NodeOne, NodeTwo}, {NodeTwo}}
+ConfigurationsSeq == <<{NodeOne}, {NodeOne, NodeTwo}, {NodeTwo}>>
 
 \*  SNIPPET_START: mc_config
 \* Limit the terms that can be reached. Needs to be set to at least 3 to
@@ -24,6 +25,8 @@ CommitNotificationLimit_mc == 2
 
 \* Limit max number of simultaneous candidates
 MaxSimultaneousCandidates_mc == 1
+
+ReconfigurationCountLimit_mc == 2
 \* SNIPPET_END: mc_config
 
 mc_spec == Spec
@@ -32,4 +35,6 @@ mc_spec == Spec
 \* via the Symmetry option in cfg file.
 Symmetry == Permutations(Servers_mc)
 
+StateConstraint ==
+    \A i \in Servers: currentConfiguration[i][1][2] = ConfigurationsSeq[reconfigurationCount]
 ===================================

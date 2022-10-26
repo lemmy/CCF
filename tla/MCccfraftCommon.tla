@@ -37,7 +37,14 @@ ASSUME MessagesLimit \in Nat
 CONSTANTS CommitNotificationLimit
 ASSUME CommitNotificationLimit \in Nat
 
+\* CONSTANT ReconfigurationCountLimit
+CONSTANTS ReconfigurationCountLimit
+ASSUME ReconfigurationCountLimit \in Nat
+
 ----
+
+View ==
+    <<currentConfiguration, messageVars, serverVars, candidateVars, leaderVars, logVars>>
 
 BoundStateSpace ==
     \* Limit number of client requests
@@ -49,6 +56,8 @@ BoundStateSpace ==
         \* (i.e., simulate that not more than a given limit of servers in each configuration times out)
         /\ Cardinality({ s \in GetServerSetForIndex(i, commitIndex[i]) : state[s] = Candidate}) <= MaxSimultaneousCandidates
         /\ commitsNotified[i][2] <= CommitNotificationLimit
+        \* Limit reconfigurations
+        /\ reconfigurationCount <= ReconfigurationCountLimit
         /\ \A j \in Servers :
             \* State limitation: Limit requested votes
             /\ votesRequested[i][j] <= RequestVoteLimit

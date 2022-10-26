@@ -78,11 +78,8 @@ ASSUME Servers /= {}
 ASSUME Servers \subseteq AllServers
 
 \* Set of configurations - Each new server should have a new identity
-CONSTANTS Configurations
-ASSUME Configurations /= <<>>
-ASSUME \A k \in 1..Len(Configurations):
-    /\ Configurations[k] /= {}
-    /\ Configurations[k] \subseteq Servers
+CONSTANTS Configurations 
+ASSUME \A c \in Configurations: c \subseteq Servers
 
 ----
 \* Global variables
@@ -90,7 +87,7 @@ ASSUME \A k \in 1..Len(Configurations):
 \* Keep track of current number of reconfigurations to limit it through the MC
 VARIABLE reconfigurationCount
 \* Each server keeps track of the pending configurations
-VARIABLE currentConfiguration
+\* VARIABLE currentConfiguration
 
 reconfigurationVars == <<reconfigurationCount, currentConfiguration>>
 
@@ -266,9 +263,10 @@ CommittedTermPrefix(i, x) ==
 \* Define initial values for all variables
 InitReconfigurationVars ==
     /\ reconfigurationCount = 0
-    /\ currentConfiguration = [i \in Servers |-> << << 0, Configurations[1] >> >> ]
+    /\ \E c \in Configurations:
+        /\ currentConfiguration = [i \in Servers |-> << << 0, c >> >> ]
 
-InitMessagesVars ==
+    InitMessagesVars ==
     /\ messages = {}
     /\ messagesSent = [i \in Servers |-> [j \in Servers |-> << >>] ]
     /\ commitsNotified = [i \in Servers |-> <<0,0>>] \* i.e., <<index, times of notification>>
@@ -458,15 +456,6 @@ SignCommittableMessages(i) ==
 ChangeConfiguration(i, newConfiguration) ==
     \* Only leader can propose changes
     /\ state[i] = Leader
-    \* Limit reconfigurations
-    /\ reconfigurationCount < Len(Configurations)-1
-    \* Configuration is non empty
-    /\ newConfiguration /= {}
-    /\ newConfiguration = Configurations[reconfigurationCount+2]
-    \* Configuration is a proper subset of the Servers
-    /\ newConfiguration \subseteq Servers
-    \* Configuration is not equal to current configuration
-    /\ newConfiguration /= currentConfiguration[i][1][2]
     \* Keep track of running reconfigurations to limit state space
     /\ reconfigurationCount' = reconfigurationCount + 1
     /\ LET
@@ -837,7 +826,7 @@ Next ==
     \/ \E i \in Servers : BecomeLeader(i)
     \/ \E i \in Servers : ClientRequest(i)
     \/ \E i \in Servers : SignCommittableMessages(i)
-    \/ \E i \in Servers : \E c \in SUBSET(Servers) : ChangeConfiguration(i, c)
+    \/ \E i \in Servers : \E c \in Configurations : ChangeConfiguration(i, c)
     \/ \E i, j \in Servers : NotifyCommit(i,j)
     \/ \E i \in Servers : AdvanceCommitIndex(i)
     \/ \E i, j \in Servers : AppendEntries(i, j)
@@ -954,7 +943,7 @@ LogTypeOK(xlog) ==
     ELSE TRUE
 
 ReconfigurationVarsTypeInv ==
-    /\ reconfigurationCount \in 0..Len(Configurations)
+    /\ reconfigurationCount \in Nat
     /\ \A i \in Servers :
         /\ currentConfiguration[i] /= <<>>
         /\ \A k \in 1..Len(currentConfiguration[i]) :
