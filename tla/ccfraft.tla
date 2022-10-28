@@ -133,10 +133,7 @@ VARIABLE commitIndex
 \* The index that gets committed
 VARIABLE committedLog
 
-\* Have conflicting log entries been committed?
-VARIABLE committedLogConflict
-
-logVars == <<log, commitIndex, clientRequests, committedLog, committedLogConflict>>
+logVars == <<log, commitIndex, clientRequests, committedLog>>
 
 \* The set of servers from which the candidate has received a vote in its
 \* currentTerm.
@@ -339,7 +336,6 @@ InitLogVars ==
     /\ commitIndex  = [i \in Servers |-> 0]
     /\ clientRequests = 1
     /\ committedLog = << >>
-    /\ committedLogConflict = FALSE
 
 Init ==
     /\ InitReconfigurationVars
@@ -458,7 +454,7 @@ BecomeLeader(i) ==
         \* Potentially also shorten the currentConfiguration if the removed index contained a configuration
         /\ configurations' = [configurations EXCEPT ![i] = RestrictPred(@, LAMBDA c : c <= new_conf_index)]
     /\ UNCHANGED <<reconfigurationCount, messageVars, currentTerm, votedFor, votesRequested, candidateVars,
-        commitIndex, clientRequests, committedLog, committedLogConflict>>
+        commitIndex, clientRequests, committedLog>>
 
 \* Leader i receives a client request to add v to the log.
 ClientRequest(i) ==
@@ -474,7 +470,7 @@ ClientRequest(i) ==
            \* Make sure that each request is unique, reduce state space to be explored
            /\ clientRequests' = clientRequests + 1
     /\ UNCHANGED <<reconfigurationVars, messageVars, serverVars, candidateVars,
-                   leaderVars, commitIndex, committedLog, committedLogConflict>>
+                   leaderVars, commitIndex, committedLog>>
 
 \*  SNIPPET_START: signing
 \* CCF extension: Signed commits
@@ -498,7 +494,7 @@ SignCommittableMessages(i) ==
             newLog == Append(log[i], entry)
             IN log' = [log EXCEPT ![i] = newLog]
         /\ UNCHANGED <<reconfigurationVars, messageVars, serverVars, candidateVars, clientRequests,
-                    leaderVars, commitIndex, committedLog, committedLogConflict>>
+                    leaderVars, commitIndex, committedLog>>
 \* SNIPPET_END: signing
 
 \*  SNIPPET_START: reconfig
@@ -529,7 +525,7 @@ ChangeConfiguration(i, newConfiguration) ==
            /\ log' = [log EXCEPT ![i] = newLog]
            /\ configurations' = [configurations EXCEPT ![i] = @ @@ Len(log[i]) + 1 :> newConfiguration]
     /\ UNCHANGED <<messageVars, serverVars, candidateVars, clientRequests,
-                    leaderVars, commitIndex, committedLog, committedLogConflict>>
+                    leaderVars, commitIndex, committedLog>>
 \* SNIPPET_END: reconfig
 
 
@@ -565,10 +561,10 @@ AdvanceCommitIndex(i) ==
         /\ commitIndex[i] < new_index
         /\ commitIndex' = [commitIndex EXCEPT ![i] = new_index]
         /\ IF new_index <= Len(committedLog) THEN
-            /\ committedLogConflict' = \E j \in 1..new_index : committedLog[j] /= new_log[j]
+            /\ Assert(\A j \in 1..new_index : committedLog[j] = new_log[j], "committedLogConflict")
             /\ UNCHANGED committedLog
            ELSE
-            /\ committedLogConflict' = \E j \in 1..Len(committedLog) : committedLog[j] /= new_log[j]
+            /\ Assert(\A j \in 1..Len(committedLog) : committedLog[j] = new_log[j], "committedLogConflict")
             /\ committedLog' = new_log
         \* If commit index surpasses the next configuration, pop the first config, and eventually retire as leader
         /\ \/ /\ Cardinality(DOMAIN configurations[i]) > 1
@@ -694,7 +690,7 @@ AppendEntriesAlreadyDone(i, j, index, m) ==
               msource         |-> i,
               mdest           |-> j],
               m)
-    /\ UNCHANGED <<reconfigurationVars, messagesSent, commitsNotified, serverVars, log, clientRequests, committedLog, committedLogConflict>>
+    /\ UNCHANGED <<reconfigurationVars, messagesSent, commitsNotified, serverVars, log, clientRequests, committedLog>>
 
 ConflictAppendEntriesRequest(i, index, m) ==
     /\ m.mentries /= << >>
@@ -711,7 +707,7 @@ ConflictAppendEntriesRequest(i, index, m) ==
                 |-> [n \in 1..min(Len(messagesSent[i][j]) - 1, index - 1)
                 |-> messagesSent[i][j][n]]]
        IN messagesSent' = [messagesSent EXCEPT ![i] = newCounts ]
-    /\ UNCHANGED <<reconfigurationCount, serverVars, commitIndex, messages, commitsNotified, clientRequests, committedLog, committedLogConflict>>
+    /\ UNCHANGED <<reconfigurationCount, serverVars, commitIndex, messages, commitsNotified, clientRequests, committedLog>>
 
 NoConflictAppendEntriesRequest(i, j, m) ==
     /\ m.mentries /= << >>
@@ -757,7 +753,7 @@ NoConflictAppendEntriesRequest(i, j, m) ==
               msource         |-> i,
               mdest           |-> j],
               m)
-    /\ UNCHANGED <<reconfigurationCount, messagesSent, commitsNotified, currentTerm, votedFor, clientRequests, committedLog, committedLogConflict>>
+    /\ UNCHANGED <<reconfigurationCount, messagesSent, commitsNotified, currentTerm, votedFor, clientRequests, committedLog>>
 
 AcceptAppendEntriesRequest(i, j, logOk, m) ==
     \* accept request
@@ -848,7 +844,7 @@ UpdateCommitIndex(i,j,m) ==
         /\ commitIndex' = [commitIndex EXCEPT ![i] = new_commit_index]
         /\ configurations' = [configurations EXCEPT ![i] = new_config]
     /\ UNCHANGED <<reconfigurationCount, messages, messagesSent, commitsNotified, currentTerm,
-                   votedFor, candidateVars, leaderVars, log, clientRequests, committedLog, committedLogConflict >>
+                   votedFor, candidateVars, leaderVars, log, clientRequests, committedLog>>
 
 \* Receive a message.
 Receive ==
@@ -904,7 +900,6 @@ Spec == Init /\ [][Next]_vars
 
 \* Committed log entries should not conflict
 LogInv ==
-    /\ \lnot committedLogConflict
     /\ \A i \in Servers : IsPrefix(Committed(i),committedLog)
 
 \* There should not be more than one leader per term at the same time
@@ -1062,7 +1057,6 @@ LogVarsTypeInv ==
         /\ commitIndex[i] \in Nat
     /\ clientRequests \in Nat \ {0}
     /\ LogTypeOK(committedLog)
-    /\ committedLogConflict \in BOOLEAN
 
 \* Invariant to check the type safety of all variables
 TypeInv ==
