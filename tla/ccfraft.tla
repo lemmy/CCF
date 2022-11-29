@@ -20,7 +20,7 @@
 \*   (e.g. certain invariants)
 
 EXTENDS Naturals, FiniteSets, Sequences, TLC, FiniteSetsExt, SequencesExt, Functions
-
+Lvl == TLCGet("level") < 5
 ----
 \* Constants
 
