@@ -67,7 +67,6 @@ ShiVizAlias ==
     [
         Host |-> host,
         Clock |-> ToJsonObject(clock[host]),
-        clock |-> clock,
         messages |-> messages,
         currentTerm |-> currentTerm,
         state |-> state,
@@ -80,7 +79,7 @@ ShiVizAlias ==
 =====================================================
 
 
-1. Change EXTEND above to extend the MCccfraft module you wish to debug.
+1. Change EXTENDS above to extend the MCccfraft module you wish to debug.
 2. Append the following to the end of the correspondig config:
 
 CONSTANTS
@@ -92,7 +91,7 @@ CONSTANTS
 ALIAS 
     ShiVizAlias
 
-3. Run TLC
-4. Copy&paste TLC's output into http://bestchai.bitbucket.org/shiviz/ and the following regular expression into the "Event filter" field:
+3. Run TLC with `-Dtlc2.value.Values.width=9999` to prevent line breaks in values.
+4. Copy&paste TLC's output into http://bestchai.bitbucket.org/shiviz/.  Paste the following regular expression into the "Log parsing regular expression:" field:
 
-(?<event>[0-9]+: <\w*) .*>\n\/\\ Host = (?<host>.*)\n\/\\ Clock = "(?<clock>.*)"\n\/\\ clock = (?<ignore>.*)\n\/\\ messages = (?<messages>.*)\n\/\\ currentTerm = (?<currentTerm>.*)\n\/\\ state = (?<state>.*)\n\/\\ log = (?<log>.*)\n\/\\ commitIndex = (?<commitIndex>.*)\n\/\\ nextIndex = (?<nextIndex>.*)\n\/\\ matchIndex = (?<matchIndex>.*)
+(?<event>[0-9]+: <\w*) .*>\n\/\\ Host = (?<host>.*)\n\/\\ Clock = "(?<clock>.*)"\n\/\\ messages = (?<messages>.*)\n\/\\ currentTerm = (?<currentTerm>.*)\n\/\\ state = (?<state>.*)\n\/\\ log = (?<log>.*)\n\/\\ commitIndex = (?<commitIndex>.*)\n\/\\ nextIndex = (?<nextIndex>.*)\n\/\\ matchIndex = (?<matchIndex>.*)
