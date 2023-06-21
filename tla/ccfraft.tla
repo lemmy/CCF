@@ -1061,53 +1061,48 @@ UpdateCommitIndex(i,j,m) ==
 
 \* Receive a message.
 
-RcvDropIgnoredMessage ==
+RcvDropIgnoredMessage(m) ==
     \* Drop any message that are to be ignored by the recipient
-    \E m \in Messages : DropIgnoredMessage(m.dest,m.source,m)
+    DropIgnoredMessage(m.dest,m.source,m)
 
-RcvUpdateTerm ==
+RcvUpdateTerm(m) ==
     \* Any RPC with a newer term causes the recipient to advance
     \* its term first. Responses with stale terms are ignored.
-    \E m \in Messages : UpdateTerm(m.dest, m.source, m)
+    UpdateTerm(m.dest, m.source, m)
 
-RcvRequestVoteRequest ==
-    \E m \in Messages : 
-        /\ m.type = RequestVoteRequest
-        /\ HandleRequestVoteRequest(m.dest, m.source, m)
+RcvRequestVoteRequest(m) ==
+    /\ m.type = RequestVoteRequest
+    /\ HandleRequestVoteRequest(m.dest, m.source, m)
 
-RcvRequestVoteResponse ==
-    \E m \in Messages : 
-        /\ m.type = RequestVoteResponse
-        /\ \/ HandleRequestVoteResponse(m.dest, m.source, m)
-           \/ DropResponseWhenNotInState(m.dest, m.source, m, Candidate)
-           \/ DropStaleResponse(m.dest, m.source, m)
+RcvRequestVoteResponse(m) ==
+    /\ m.type = RequestVoteResponse
+    /\ \/ HandleRequestVoteResponse(m.dest, m.source, m)
+        \/ DropResponseWhenNotInState(m.dest, m.source, m, Candidate)
+        \/ DropStaleResponse(m.dest, m.source, m)
 
-RcvAppendEntriesRequest ==
-    \E m \in Messages : 
-        /\ m.type = AppendEntriesRequest
-        /\ HandleAppendEntriesRequest(m.dest, m.source, m)
+RcvAppendEntriesRequest(m) ==
+    /\ m.type = AppendEntriesRequest
+    /\ HandleAppendEntriesRequest(m.dest, m.source, m)
 
-RcvAppendEntriesResponse ==
-    \E m \in Messages : 
-        /\ m.type = AppendEntriesResponse
-        /\ \/ HandleAppendEntriesResponse(m.dest, m.source, m)
-           \/ DropResponseWhenNotInState(m.dest, m.source, m, Leader)
-           \/ DropStaleResponse(m.dest, m.source, m)
+RcvAppendEntriesResponse(m) ==
+    /\ m.type = AppendEntriesResponse
+    /\ \/ HandleAppendEntriesResponse(m.dest, m.source, m)
+        \/ DropResponseWhenNotInState(m.dest, m.source, m, Leader)
+        \/ DropStaleResponse(m.dest, m.source, m)
 
-RcvUpdateCommitIndex ==
-    \E m \in Messages : 
-        /\ m.type = NotifyCommitMessage
-        /\ UpdateCommitIndex(m.dest, m.source, m)
-        /\ Discard(m)
+RcvUpdateCommitIndex(m) ==
+    /\ m.type = NotifyCommitMessage
+    /\ UpdateCommitIndex(m.dest, m.source, m)
+    /\ Discard(m)
 
-Receive ==
-    \/ RcvDropIgnoredMessage
-    \/ RcvUpdateTerm
-    \/ RcvRequestVoteRequest
-    \/ RcvRequestVoteResponse
-    \/ RcvAppendEntriesRequest
-    \/ RcvAppendEntriesResponse
-    \/ RcvUpdateCommitIndex
+Receive(m) ==
+    \/ RcvDropIgnoredMessage(m)
+    \/ RcvUpdateTerm(m)
+    \/ RcvRequestVoteRequest(m)
+    \/ RcvRequestVoteResponse(m)
+    \/ RcvAppendEntriesRequest(m)
+    \/ RcvAppendEntriesResponse(m)
+    \/ RcvUpdateCommitIndex(m)
 
 \* End of message handlers.
 ------------------------------------------------------------------------------
@@ -1118,17 +1113,19 @@ Receive ==
 
 \* Defines how the variables may transition.
 Next ==
-    \/ \E i \in Servers : Timeout(i)
-    \/ \E i, j \in Servers : RequestVote(i, j)
-    \/ \E i \in Servers : BecomeLeader(i)
-    \/ \E i \in Servers : ClientRequest(i)
-    \/ \E i \in Servers : SignCommittableMessages(i)
-    \/ \E i \in Servers : ChangeConfiguration(i)
-    \/ \E i, j \in Servers : NotifyCommit(i,j)
-    \/ \E i \in Servers : AdvanceCommitIndex(i)
-    \/ \E i, j \in Servers : AppendEntries(i, j)
-    \/ \E i \in Servers : CheckQuorum(i)
-    \/ Receive
+    \/ \E i, j \in Servers : 
+        \/ RequestVote(i, j)
+        \/ Timeout(i)
+        \/ BecomeLeader(i)
+        \/ ClientRequest(i)
+        \/ SignCommittableMessages(i)
+        \/ ChangeConfiguration(i)
+        \/ NotifyCommit(i,j)
+        \/ AdvanceCommitIndex(i)
+        \/ AppendEntries(i, j)
+        \/ CheckQuorum(i)
+    \/ \E m \in Messages :
+        \/ Receive(m)
 
 \* The specification must start with the initial state and transition according
 \* to Next.
