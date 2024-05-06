@@ -137,5 +137,5 @@ NextSingleNodeAction ==
 
 SpecSingleNode == Init /\ [][NextSingleNodeAction]_vars
 
-
+Next == NextSingleNodeAction
 ====
