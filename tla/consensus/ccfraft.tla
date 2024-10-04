@@ -1291,6 +1291,7 @@ Spec ==
     /\ \A s, t \in Servers : WF_vars(RequestVote(s, t))
     /\ \A s \in Servers : WF_vars(SignCommittableMessages(s))
     /\ \A s \in Servers : WF_vars(AdvanceCommitIndex(s))
+    /\ \A s \in Servers : WF_vars(AppendRetiredCommitted(s))
     /\ \A s \in Servers : WF_vars(BecomeLeader(s))
     /\ \A s \in Servers : WF_vars(Timeout(s))
 
@@ -1613,7 +1614,14 @@ LogMatchingProp ==
     \A i, j \in Servers : []<>(log[i] = log[j])
 
 LeaderProp ==
-    []<><<\E i \in Servers : leadershipState[i] = Leader>>_vars
+    \* There is repeatedly a non-retired leader.
+    []<><<\E i \in Servers : leadershipState[i] = Leader /\ membershipState[i] # RetiredCommitted>>_vars
+
+RetirementProp ==
+    \* Any node that is in the RetirementCompleted state will eventually be in the RetiredCommitted state
+    \* and stay there forever.
+    \A i \in Servers : membershipState[i] = RetirementCompleted ~> [](membershipState[i] = RetiredCommitted)
+
 
 ------------------------------------------------------------------------------
 \* Refinement of the more high-level specification abs.tla that abstracts the

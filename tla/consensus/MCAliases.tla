@@ -122,4 +122,19 @@ AnimateLogAndStateAlias ==
             ToString(leadershipState[s]) \o " " \o ToString(currentTerm[s]), <<>>, Servers)
     ELSE <<>>
 
+
+DebugEnablementAlias ==
+    DebugAliasVars @@
+    [
+        E_AppendEntries |-> ENABLED \E s, t \in Servers : AppendEntries(s, t),
+        E_RequestVote |-> ENABLED \E s, t \in Servers : RequestVote(s, t),
+        E_SignCommittableMessages |-> ENABLED \E s \in Servers : SignCommittableMessages(s),
+        E_AdvanceCommitIndex |-> ENABLED \E s \in Servers : AdvanceCommitIndex(s),
+        E_AppendRetiredCommitted |-> ENABLED \E s \in Servers : AppendRetiredCommitted(s),
+        E_ChangeConfiguration |-> ENABLED \E s \in Servers : ChangeConfiguration(s),
+        E_BecomeLeader |-> ENABLED \E s \in Servers : BecomeLeader(s),
+        E_Timeout |-> ENABLED \E s \in Servers : Timeout(s),
+        E_Receive |-> ENABLED \E s, t \in Servers : Receive(s, t)
+    ]
+
 =============================================================================
